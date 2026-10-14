@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b1c">
+  <meta name="description" content="MOLT: a robotic burrowing sandbox. Dig through a living pixel world of sand, water, lava, and fire. Rust + WebGPU.">
+  <title>MOLT / Tunnel Machine</title>
+  <style>
+    :root { color-scheme: dark; font-family: 'Segoe UI', sans-serif; color: #c6d1c6; background: #0b1315; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; outline: none; image-rendering: pixelated; }
+    #boot { position: fixed; inset: 0; z-index: 5; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 6vw; padding: 8vw; background: radial-gradient(ellipse at 85% 60%, #293b36 0, #111d1e 45%, #0a1316 80%); }
+    #boot::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .14; background: repeating-linear-gradient(0deg, transparent 0 35px, #88a79a 36px, transparent 37px); mask-image: linear-gradient(90deg, transparent, black); }
+    .eyebrow, .meta, button, .manual { font-family: Consolas, 'Courier New', monospace; }
+    .eyebrow { color: #88ac9d; letter-spacing: .23em; font-size: 11px; text-transform: uppercase; }
+    h1 { margin: 20px 0 0; font-size: clamp(80px, 15vw, 190px); letter-spacing: -.07em; line-height: .85; font-weight: 800; color: #dbc38b; }
+    .subtitle { font-size: 16px; letter-spacing: .39em; font-weight: 400; color: #a1b1a3; margin-top: 28px; }
+    .description { font-size: 18px; line-height: 1.65; max-width: 390px; color: #899f96; margin: 38px 0; }
+    button { border: 1px solid #dac089; color: #14211e; background: #dac089; font-weight: bold; letter-spacing: .12em; padding: 18px 28px; cursor: pointer; font-size: 13px; }
+    button:hover { background: #efe0b5; }
+    button:disabled { opacity: .6; cursor: progress; }
+    #loading-status { font: 12px/1.6 Consolas, monospace; color: #94b4a3; margin-top: 18px; max-width: 600px; white-space: pre-wrap; }
+    .manual { position: relative; max-width: 370px; border-left: 1px solid #486052; padding-left: 32px; color: #8ea79a; }
+    .manual h2 { color: #c9d3bd; font-size: 12px; letter-spacing: .2em; margin: 0 0 28px; }
+    .manual p { display: flex; justify-content: space-between; gap: 25px; font-size: 12px; line-height: 1.6; }
+    kbd { color: #dec48f; font: inherit; white-space: nowrap; }
+    .manual .note { display: block; color: #5e7c6e; margin-top: 32px; }
+    .meta { position: absolute; left: 8vw; right: 8vw; bottom: 30px; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .13em; color: #53766a; }
+    [data-ready="true"] #boot { display: none; }
+    @media (max-width: 700px) { #boot { grid-template-columns: 1fr; padding: 8vw; } .manual { display: none; } .description { margin: 28px 0; } }
+  </style>
+</head>
+<body>
+  <canvas id="game" tabindex="0" aria-label="MOLT game. WASD to dig, space to boost, E to explode, right mouse to pour material, H for help."></canvas>
+  <main id="boot">
+    <section>
+      <div class="eyebrow">Subsurface exploration program / S-01</div>
+      <h1>MOLT</h1>
+      <div class="subtitle">TUNNEL MACHINE</div>
+      <p class="description">A world beneath the world.<br>Eat through stone. Breach a reservoir.<br>Find out what flows into the dark.</p>
+      <button id="launch">INITIALIZE MACHINE &nbsp; →</button>
+      <div id="loading-status" role="status">RUST / WASM / WEBGPU &nbsp; · &nbsp; DESKTOP CONTROLS</div>
+    </section>
+    <aside class="manual">
+      <h2>FIELD MANUAL / 001</h2>
+      <p><kbd>W A S D</kbd><span>Steer and consume</span></p>
+      <p><kbd>LEFT MOUSE</kbd><span>Burrow toward cursor</span></p>
+      <p><kbd>SPACE</kbd><span>Overdrive</span></p>
+      <p><kbd>E</kbd><span>Detonate ahead</span></p>
+      <p><kbd>RIGHT MOUSE</kbd><span>Pour selected material</span></p>
+      <p><kbd>1 — 5</kbd><span>Sand / water / lava / oil / rock</span></p>
+      <p><kbd>F5</kbd><span>Save checkpoint</span></p>
+      <p class="note">Persistent terrain in every direction.<br>Chunks save as you explore. Save before closing this tab.</p>
+    </aside>
+    <footer class="meta"><span>PROTOTYPE 0.1 / GPU MATERIAL LAB</span><span>BURROW. DISTURB. DISCOVER.</span></footer>
+  </main>
+  <script type="module">
+    const status = document.querySelector('#loading-status');
+    const launch = document.querySelector('#launch');
+    document.querySelector('canvas').addEventListener('contextmenu', event => event.preventDefault());
+    addEventListener('keydown', event => {
+      if (document.documentElement.dataset.ready && ['F5', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+    });
+    addEventListener('error', event => { status.textContent = `Engine error: ${event.message}`; });
+    addEventListener('unhandledrejection', event => { status.textContent = `Engine error: ${event.reason}`; });
+    launch.addEventListener('click', async () => {
+      if (!navigator.gpu) { status.textContent = 'WebGPU is unavailable. Use a supported desktop browser with hardware acceleration, or run the native Windows build.'; return; }
+      launch.disabled = true;
+      status.textContent = 'LOADING ENGINE / GENERATING STRATA...';
+      try {
+        const {default: init} = await import('./pkg/molt.js');
+        await init();
+        document.querySelector('canvas').focus();
+      } catch (error) {
+        status.textContent = `Unable to start: ${error.message}`;
+        launch.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
