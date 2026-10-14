@@ -33,13 +33,13 @@
   </style>
 </head>
 <body>
-  <canvas id="game" tabindex="0" aria-label="MOLT game. WASD to dig, space to boost, E to explode, right mouse to pour material, H for help."></canvas>
+  <canvas id="game" tabindex="0" aria-label="MOLT game. Eat cyan ore to grow. WASD to dig, space to boost, E to ignite pink seams, 1 to 3 to choose upgrades, Tab for material lab, H for help."></canvas>
   <main id="boot">
     <section>
       <div class="eyebrow">Subsurface exploration program / S-01</div>
       <h1>MOLT</h1>
       <div class="subtitle">TUNNEL MACHINE</div>
-      <p class="description">A world beneath the world.<br>Eat through stone. Breach a reservoir.<br>Find out what flows into the dark.</p>
+      <p class="description">Start small. Eat the glowing ore.<br>Grow new segments. Upgrade your jaws.<br>Set off something much bigger than you.</p>
       <button id="launch">INITIALIZE MACHINE &nbsp; →</button>
       <div id="loading-status" role="status">RUST / WASM / WEBGPU &nbsp; · &nbsp; DESKTOP CONTROLS</div>
     </section>
@@ -48,25 +48,27 @@
       <p><kbd>W A S D</kbd><span>Steer and consume</span></p>
       <p><kbd>LEFT MOUSE</kbd><span>Burrow toward cursor</span></p>
       <p><kbd>SPACE</kbd><span>Overdrive</span></p>
-      <p><kbd>E</kbd><span>Detonate ahead</span></p>
-      <p><kbd>RIGHT MOUSE</kbd><span>Pour selected material</span></p>
-      <p><kbd>1 — 5</kbd><span>Sand / water / lava / oil / rock</span></p>
+      <p><kbd>E</kbd><span>Blast ore loose / ignite pink seams</span></p>
+      <p><kbd>1 / 2 / 3</kbd><span>Choose an upgrade when you molt</span></p>
+      <p><kbd>TAB</kbd><span>Material lab / right mouse to pour</span></p>
       <p><kbd>F5</kbd><span>Save checkpoint</span></p>
-      <p class="note">Persistent terrain in every direction.<br>Chunks save as you explore. Save before closing this tab.</p>
+      <p class="note">Cyan ore feeds your next evolution.<br>Pink seams chain. Loose nuggets are still food.<br>F5 saves terrain, ore, and upgrades. M mutes sound.</p>
     </aside>
-    <footer class="meta"><span>PROTOTYPE 0.1 / GPU MATERIAL LAB</span><span>BURROW. DISTURB. DISCOVER.</span></footer>
+    <footer class="meta"><span>PROTOTYPE 0.2 / EAT. EVOLVE. DETONATE.</span><span>SMALL SNAKE. BIG CONSEQUENCES.</span></footer>
   </main>
   <script type="module">
     const status = document.querySelector('#loading-status');
     const launch = document.querySelector('#launch');
     document.querySelector('canvas').addEventListener('contextmenu', event => event.preventDefault());
     addEventListener('keydown', event => {
-      if (document.documentElement.dataset.ready && ['F5', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+      if (document.documentElement.dataset.ready && ['F5', 'Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+      if (event.code==='KeyM' && !event.repeat) window.moltMuted=!window.moltMuted;
     });
     addEventListener('error', event => { status.textContent = `Engine error: ${event.message}`; });
     addEventListener('unhandledrejection', event => { status.textContent = `Engine error: ${event.reason}`; });
     launch.addEventListener('click', async () => {
       if (!navigator.gpu) { status.textContent = 'WebGPU is unavailable. Use a supported desktop browser with hardware acceleration, or run the native Windows build.'; return; }
+      try { window.moltAudio ||= new AudioContext(); window.moltAudio.resume().catch(()=>{}); } catch {}
       launch.disabled = true;
       status.textContent = 'LOADING ENGINE / GENERATING STRATA...';
       try {
