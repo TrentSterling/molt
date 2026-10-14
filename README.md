@@ -1,6 +1,6 @@
 # MOLT / Tunnel Machine
 
-**[Play MOLT](https://trentsterling.github.io/molt/)**
+**[Play MOLT](https://tront.xyz/molt/)**
 
 A robotic snake digging sandbox powered by Rust, WebAssembly, and WebGPU.
 Burrow through sand and rock, breach water reservoirs, pour lava, and detonate tunnels in a procedural pixel world.
